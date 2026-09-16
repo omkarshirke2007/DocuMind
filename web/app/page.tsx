@@ -436,7 +436,10 @@ export default function DocuMindDashboard() {
     showToast('Exported verified JSON audit payload.', 'success');
   };
 
-  const isMockSource = currentSource === 'mock_fallback' || currentSource === 'standalone_slm_engine';
+  const isMockSource =
+    currentSource === 'mock_fallback' ||
+    currentSource === 'standalone_slm_engine' ||
+    currentSource === 'cloud_edge_parser';
 
   const stagedPreset = stagedPresetId ? DOCUMENT_PRESETS[stagedPresetId] : null;
   const currentScanningFilename = stagedFile?.name || stagedPreset?.filename || 'document.pdf';

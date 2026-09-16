@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { DOCUMENT_PRESETS } from '@/lib/presets';
 import { verifyApiAuth } from '@/lib/supabase-server';
+import { extractFromPdfBuffer } from '@/lib/serverless-extractor';
 
 export async function POST(req: NextRequest) {
   try {
@@ -23,8 +24,6 @@ export async function POST(req: NextRequest) {
 
     // --------------------------------------------------------------------------
     // Branch A: Multipart File Upload (Real uploaded document)
-    // NEVER fall back to preset fixtures here! Real documents must be processed
-    // by the FastAPI engine or return a distinct, actionable error status.
     // --------------------------------------------------------------------------
     if (contentType.includes('multipart/form-data')) {
       const formData = await req.formData();
@@ -68,12 +67,40 @@ export async function POST(req: NextRequest) {
           );
         }
       } catch (fetchErr: any) {
-        // FastAPI engine is down or unreachable
+        // AI engine is unreachable (e.g. running on Vercel without external backend URL)
+        console.warn('[DocuMind] External AI engine unreachable at', aiEngineBase, fetchErr?.message || fetchErr);
+
+        // Seamless Edge Fallback: If this is a PDF, parse it natively in the Vercel serverless environment
+        if (file && filename.toLowerCase().endsWith('.pdf')) {
+          try {
+            const arrayBuffer = await file.arrayBuffer();
+            const buffer = Buffer.from(arrayBuffer);
+            const parsed = extractFromPdfBuffer(buffer, filename);
+            return NextResponse.json(parsed);
+          } catch (parseErr) {
+            console.error('[DocuMind] Edge PDF extraction error:', parseErr);
+          }
+        }
+
+        // If this is an image file and no Python backend is connected
+        const isImage = file && /\.(webp|png|jpe?g|tiff|bmp)$/i.test(filename);
+        if (isImage) {
+          return NextResponse.json(
+            {
+              status: 'error',
+              error: 'OcrEngineRequired',
+              message:
+                'Image OCR requires the Python backend (RapidOCR). To process image files on Vercel, deploy services/ai-engine to Render or Railway and set the AI_ENGINE_URL environment variable. For instant Vercel cloud evaluation, upload any PDF invoice or click one of the benchmark presets below!',
+            },
+            { status: 502 }
+          );
+        }
+
         return NextResponse.json(
           {
             status: 'error',
             error: 'EngineUnavailable',
-            message: 'Extraction engine unavailable — please ensure FastAPI AI engine is running on port 8000 and try again.',
+            message: `Extraction engine unreachable at ${aiEngineBase}. Set AI_ENGINE_URL in Vercel to your deployed backend, or upload a PDF invoice.`,
           },
           { status: 502 }
         );
