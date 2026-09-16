@@ -1,0 +1,41 @@
+version: '3.8'
+
+services:
+  ai-engine:
+    build:
+      context: ./services/ai-engine
+      dockerfile: Dockerfile
+    container_name: documind-ai-engine
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./services/ai-engine/models:/app/models
+    environment:
+      - SUPABASE_URL=${SUPABASE_URL:-https://demo-placeholder.supabase.co}
+      - SUPABASE_SERVICE_ROLE_KEY=${SUPABASE_SERVICE_ROLE_KEY:-demo-service-role-key}
+      - MODEL_PATH=/app/models/llama-3.2-3b-instruct-q4_k_m.gguf
+      - N_GPU_LAYERS=-1
+      - CONTEXT_SIZE=4096
+      - MOCK_FALLBACK=${MOCK_FALLBACK:-false}
+      - DOCUMIND_API_KEY=${DOCUMIND_API_KEY:-documind-secure-hackathon-key-2026}
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 4096M
+
+  web:
+    build:
+      context: ./web
+      dockerfile: Dockerfile
+    container_name: documind-web
+    ports:
+      - "3000:3000"
+    environment:
+      - NEXT_PUBLIC_SUPABASE_URL=${NEXT_PUBLIC_SUPABASE_URL:-https://demo-placeholder.supabase.co}
+      - NEXT_PUBLIC_SUPABASE_ANON_KEY=${NEXT_PUBLIC_SUPABASE_ANON_KEY:-demo-anon-key}
+      - DOCUMIND_API_KEY=${DOCUMIND_API_KEY:-documind-secure-hackathon-key-2026}
+      - SUPABASE_SERVICE_ROLE_KEY=${SUPABASE_SERVICE_ROLE_KEY:-demo-service-role-key}
+    depends_on:
+      - ai-engine
+    restart: unless-stopped
