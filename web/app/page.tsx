@@ -49,6 +49,9 @@ export default function DocuMindDashboard() {
     type: 'info' | 'success' | 'warning';
   } | null>(null);
 
+  // Dismissible banner state
+  const [isBannerDismissed, setIsBannerDismissed] = useState(false);
+
   // Hidden upload file input ref & blob URL
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [customFileUrl, setCustomFileUrl] = useState<string | null>(null);
@@ -498,26 +501,55 @@ export default function DocuMindDashboard() {
 
         {/* Main Workspace Area */}
         <main className="flex-1 max-w-[1550px] w-full mx-auto p-5 flex flex-col gap-4">
-          {/* Unmissable Mock Result Warning Banner (shown only when viewing mock results) */}
-          {flowState === 'results' && isMockSource && (
-            <div className="w-full bg-amber-950/80 border border-amber-500/80 text-amber-200 px-4 py-2.5 rounded-xl text-xs flex flex-wrap items-center justify-between gap-2 shadow-xl animate-fade-in">
+          {/* Unmissable Mock Result Warning Banner (shown only when viewing mock results, dismissible) */}
+          {flowState === 'results' && isMockSource && !isBannerDismissed && (
+            <div
+              className={`w-full border px-4 py-2.5 rounded-xl text-xs flex flex-wrap items-center justify-between gap-2 shadow-xl animate-fade-in ${
+                currentSource === 'cloud_edge_parser'
+                  ? 'bg-slate-900/95 border-blue-500/60 text-blue-200'
+                  : 'bg-amber-950/80 border-amber-500/80 text-amber-200'
+              }`}
+            >
               <div className="flex items-center gap-2.5">
-                <AlertTriangle className="w-4 h-4 text-amber-400 shrink-0 animate-pulse" />
+                {currentSource === 'cloud_edge_parser' ? (
+                  <span className="w-2.5 h-2.5 rounded-full bg-blue-400 animate-ping shrink-0" />
+                ) : (
+                  <AlertTriangle className="w-4 h-4 text-amber-400 shrink-0 animate-pulse" />
+                )}
                 <div>
-                  <span className="font-bold uppercase tracking-wider font-mono text-amber-300 mr-2">
-                    Mock Result — Model weights not loaded
+                  <span
+                    className={`font-bold uppercase tracking-wider font-mono mr-2 ${
+                      currentSource === 'cloud_edge_parser' ? 'text-blue-300' : 'text-amber-300'
+                    }`}
+                  >
+                    {currentSource === 'cloud_edge_parser'
+                      ? 'Vercel Cloud Edge Mode'
+                      : 'Mock Result — Model weights not loaded'}
                   </span>
                   <span className="text-slate-300 text-[11px]">
-                    Running in local simulation mode (MOCK_FALLBACK=true). Download Llama-3.2-3B GGUF weights to activate real on-premise SLM inference.
+                    {currentSource === 'cloud_edge_parser'
+                      ? 'Running in zero-dependency Vercel Edge mode. Connect AI_ENGINE_URL to your GPU backend to activate full on-premise SLM inference.'
+                      : 'Running in local simulation mode (MOCK_FALLBACK=true). Download Llama-3.2-3B GGUF weights to activate real on-premise SLM inference.'}
                   </span>
                 </div>
               </div>
-              <button
-                onClick={() => setIsTokensOpen(true)}
-                className="text-[11px] font-mono text-amber-300 underline hover:text-white shrink-0 ml-3 cursor-pointer"
-              >
-                Inspect Spatial Tokens →
-              </button>
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={() => setIsTokensOpen(true)}
+                  className={`text-[11px] font-mono underline hover:text-white shrink-0 cursor-pointer ${
+                    currentSource === 'cloud_edge_parser' ? 'text-blue-300' : 'text-amber-300'
+                  }`}
+                >
+                  Inspect Spatial Tokens →
+                </button>
+                <button
+                  onClick={() => setIsBannerDismissed(true)}
+                  className="text-slate-400 hover:text-white text-xs px-1.5 py-0.5 rounded hover:bg-slate-800 transition cursor-pointer"
+                  title="Dismiss banner"
+                >
+                  ✕
+                </button>
+              </div>
             </div>
           )}
 

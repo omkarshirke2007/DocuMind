@@ -95,7 +95,12 @@ export const TelemetryHeader: React.FC<TelemetryHeaderProps> = ({
 
       {/* Source Indicator Badge */}
       <div className="hidden md:flex items-center">
-        {isMock ? (
+        {source === 'cloud_edge_parser' ? (
+          <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-blue-950/70 border border-blue-500/80 text-blue-300 text-[10px] font-mono shadow-[0_0_10px_rgba(59,130,246,0.25)]">
+            <span className="w-1.5 h-1.5 rounded-full bg-blue-400 animate-ping mr-0.5" />
+            <span className="font-semibold">VERCEL CLOUD EDGE PIPELINE</span>
+          </div>
+        ) : isMock ? (
           <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-amber-950/70 border border-amber-600/80 text-amber-300 text-[10px] font-mono shadow-[0_0_10px_rgba(245,158,11,0.2)]">
             <AlertTriangle className="w-3 h-3 text-amber-400 animate-pulse" />
             <span className="font-semibold">MOCK / SIMULATION MODE</span>
